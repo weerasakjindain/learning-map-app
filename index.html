@@ -6,8 +6,11 @@
     <title>แผนที่ฐานเรียนรู้</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; background-color: #8bb381; /* สีพื้นหลัง */ }
+        /* ซ่อนแถบเลื่อน (Scrollbar) และทำให้แผนที่เต็มจอเสมอ */
+        body { margin: 0; padding: 0; background-color: #8bb381; overflow: hidden; }
         #map { width: 100vw; height: 100vh; } 
+        
+        /* ตกแต่งปุ่มในกรอบข้อความ */
         .popup-btn {
             display: block; text-align: center; background: #ff6b6b; 
             color: white; padding: 8px; text-decoration: none; border-radius: 5px; margin-top: 10px;
@@ -18,38 +21,51 @@
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. ตั้งค่าให้เป็นระบบพิกัดสำหรับรูปภาพ (ไม่ใช่แผนที่โลก)
+        // 1. ตั้งค่าระบบแผนที่รูปภาพ
         var map = L.map('map', {
             crs: L.CRS.Simple,
-            minZoom: -1, // ซูมออกได้สุด
-            maxZoom: 2   // ซูมเข้าได้สุด
+            minZoom: -1.5, // ปรับให้สามารถซูมออกได้มากขึ้นกรณีจอมือถือเล็ก
+            maxZoom: 2
         });
 
-        // 2. กำหนดขนาดของรูปภาพ (กว้างxสูง เป็นพิกัดสมมติ)
+        // 2. กำหนดขนาดและโหลดรูปภาพ
         var bounds = [[0, 0], [1080, 1920]]; 
+        L.imageOverlay('map-image.jpg', bounds).addTo(map);
 
-        // 3. ดึงไฟล์รูปภาพมาแสดงเป็นแผนที่
-        var image = L.imageOverlay('map-image.jpg', bounds).addTo(map);
+        // 3. ทำให้ภาพพอดีกับจอเสมอ (เมื่อเปิดครั้งแรก และเมื่อหมุนหน้าจอมือถือ/ย่อขยายหน้าต่าง)
         map.fitBounds(bounds);
-
-        // ==========================================
-        // ส่วนปักหมุดฐานเรียนรู้
-        // ==========================================
-
-        // หมุดที่ 1: ฐานเรียนรู้ที่ 1: ธนาคารน้ำใต้ดิน
-        var marker1 = L.marker([563, 574]).addTo(map);
-        marker1.bindPopup("<b>ฐานเรียนรู้ที่ 1: ธนาคารน้ำใต้ดิน</b><br><a href='https://www.canva.com/design/DAG6_Fjrpjw/PmT8CNwBeTEXrluTA-A1tg/view' target='_blank' class='popup-btn'>คลิกเพื่อเข้าสู่บทเรียน</a>");
-
-        // หมุดที่ 2: สระน้ำด้านบน
-        var marker2 = L.marker([880, 1100]).addTo(map);
-        marker2.bindPopup("<b>ฐานเรียนรู้ที่ 2: ระบบนิเวศน้ำ</b><br><a href='https://www.google.com' target='_blank' class='popup-btn'>คลิกเพื่อเข้าสู่บทเรียน</a>");
-
-        // ==========================================
-        // ตัวช่วยสำหรับคุณ (นักพัฒนา): คลิกลงบนแผนที่เพื่อดูพิกัด
-        // ==========================================
-        map.on('click', function(e) {
-            alert("นำตัวเลขนี้ไปใส่ในโค้ดหมุดใหม่ได้เลย:\nพิกัดคือ: [" + Math.round(e.latlng.lat) + ", " + Math.round(e.latlng.lng) + "]");
+        window.addEventListener('resize', function() {
+            map.fitBounds(bounds);
         });
+
+        // ==========================================
+        // ส่วนปักหมุดฐานเรียนรู้ (แก้พิกัดตรงนี้ได้เลย)
+        // ==========================================
+        var marker1 = L.marker([650, 960]).addTo(map);
+        marker1.bindPopup("<b>ฐานเรียนรู้ที่ 1: อาคารอำนวยการ</b><br><a href='https://www.youtube.com' target='_blank' class='popup-btn'>เข้าสู่บทเรียน</a>");
+
+        var marker2 = L.marker([880, 1100]).addTo(map);
+        marker2.bindPopup("<b>ฐานเรียนรู้ที่ 2: ระบบนิเวศน้ำ</b><br><a href='https://www.google.com' target='_blank' class='popup-btn'>เข้าสู่บทเรียน</a>");
+
+
+        // ==========================================
+        // โหมด Admin สำหรับนักพัฒนา (หาพิกัด)
+        // ==========================================
+        // ตรวจสอบลิงก์ด้านบนว่ามีคำว่า ?admin=true หรือไม่
+        var urlParams = new URLSearchParams(window.location.search);
+        var isAdmin = urlParams.get('admin'); 
+
+        if (isAdmin === 'true') {
+            // ถ้ารหัสตรง จะแจ้งเตือนให้แอดมินทราบว่าระบบทำงานแล้ว
+            alert("✅ โหมด Admin เปิดใช้งาน: คุณสามารถคลิกบนแผนที่เพื่อหาพิกัดได้");
+            
+            // เปิดระบบคลิกเพื่อบอกพิกัด
+            map.on('click', function(e) {
+                var lat = Math.round(e.latlng.lat);
+                var lng = Math.round(e.latlng.lng);
+                alert("คัดลอกตัวเลขนี้ไปใช้ได้เลย:\n[" + lat + ", " + lng + "]");
+            });
+        }
     </script>
 </body>
 </html>
