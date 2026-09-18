@@ -2,15 +2,27 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 1. ป้องกันหน้าจอเด้งหรือซูมทั้งหน้าเว็บเวลากดจิ้มบนมือถือ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>แผนที่ฐานเรียนรู้</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* ซ่อนแถบเลื่อน (Scrollbar) และทำให้แผนที่เต็มจอเสมอ */
-        body { margin: 0; padding: 0; background-color: #8bb381; overflow: hidden; }
-        #map { width: 100vw; height: 100vh; } 
+        /* 2. ลบขอบทั้งหมด และซ่อนแถบเลื่อน */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #8bb381; 
+            overflow: hidden; 
+        }
         
-        /* ตกแต่งปุ่มในกรอบข้อความ */
+        /* 3. ใช้ dvh (Dynamic Viewport Height) เพื่อให้เต็มจอมือถือจริงๆ แม้จะมีแถบเบราว์เซอร์โผล่มา */
+        #map { 
+            width: 100%; 
+            height: 100dvh; 
+        } 
+        
         .popup-btn {
             display: block; text-align: center; background: #ff6b6b; 
             color: white; padding: 8px; text-decoration: none; border-radius: 5px; margin-top: 10px;
@@ -21,25 +33,37 @@
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. ตั้งค่าระบบแผนที่รูปภาพ
         var map = L.map('map', {
             crs: L.CRS.Simple,
-            minZoom: -1.5, // ปรับให้สามารถซูมออกได้มากขึ้นกรณีจอมือถือเล็ก
-            maxZoom: 2
+            minZoom: -2, // ปรับค่าติดลบเพิ่ม เพื่อให้มือถือจอเล็กๆ สามารถซูมออกให้เห็นภาพรวมได้
+            maxZoom: 2,
+            zoomControl: false // ปิดปุ่มซูมเริ่มต้น เพื่อย้ายไปไว้มุมอื่นที่กดง่ายกว่า
         });
 
-        // 2. กำหนดขนาดและโหลดรูปภาพ
-        var bounds = [[0, 0], [1080, 1920]]; 
-        L.imageOverlay('map-image.jpg', bounds).addTo(map);
+        // ย้ายปุ่มซูม + - ไปไว้มุมขวาล่าง จะได้ไม่เกะกะบนมือถือ
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // 3. ทำให้ภาพพอดีกับจอเสมอ (เมื่อเปิดครั้งแรก และเมื่อหมุนหน้าจอมือถือ/ย่อขยายหน้าต่าง)
-        map.fitBounds(bounds);
-        window.addEventListener('resize', function() {
+        // ขนาดของภาพ (อ้างอิงอัตราส่วนจากภาพของคุณ)
+        var bounds = [[0, 0], [1080, 1920]]; 
+        L.imageOverlay('map.webp.jpg', bounds).addTo(map);
+
+        // 4. ฟังก์ชันสั่งให้แผนที่จัดตัวเองให้พอดีจอ
+        function resizeMap() {
             map.fitBounds(bounds);
+        }
+
+        // เรียกใช้งานทันทีเมื่อโหลดเสร็จ
+        resizeMap();
+
+        // 5. เมื่อมีการหมุนจอมือถือ หรือปรับขนาดหน้าต่างคอมพิวเตอร์ ให้จัดภาพใหม่เสมอ
+        window.addEventListener('resize', resizeMap);
+        window.addEventListener('orientationchange', function() {
+            // หน่วงเวลาเล็กน้อยเพื่อให้เบราว์เซอร์หมุนจอเสร็จก่อน แล้วค่อยคำนวณขนาดภาพใหม่
+            setTimeout(resizeMap, 200); 
         });
 
         // ==========================================
-        // ส่วนปักหมุดฐานเรียนรู้ (แก้พิกัดตรงนี้ได้เลย)
+        // ส่วนปักหมุดฐานเรียนรู้
         // ==========================================
         var marker1 = L.marker([650, 960]).addTo(map);
         marker1.bindPopup("<b>ฐานเรียนรู้ที่ 1: อาคารอำนวยการ</b><br><a href='https://www.youtube.com' target='_blank' class='popup-btn'>เข้าสู่บทเรียน</a>");
@@ -47,23 +71,16 @@
         var marker2 = L.marker([880, 1100]).addTo(map);
         marker2.bindPopup("<b>ฐานเรียนรู้ที่ 2: ระบบนิเวศน้ำ</b><br><a href='https://www.google.com' target='_blank' class='popup-btn'>เข้าสู่บทเรียน</a>");
 
-
         // ==========================================
-        // โหมด Admin สำหรับนักพัฒนา (หาพิกัด)
+        // โหมด Admin สำหรับนักพัฒนา (พิมพ์ ?admin=true ต่อท้ายลิงก์)
         // ==========================================
-        // ตรวจสอบลิงก์ด้านบนว่ามีคำว่า ?admin=true หรือไม่
         var urlParams = new URLSearchParams(window.location.search);
-        var isAdmin = urlParams.get('admin'); 
-
-        if (isAdmin === 'true') {
-            // ถ้ารหัสตรง จะแจ้งเตือนให้แอดมินทราบว่าระบบทำงานแล้ว
-            alert("✅ โหมด Admin เปิดใช้งาน: คุณสามารถคลิกบนแผนที่เพื่อหาพิกัดได้");
-            
-            // เปิดระบบคลิกเพื่อบอกพิกัด
+        if (urlParams.get('admin') === 'true') {
+            alert("✅ โหมด Admin เปิดใช้งาน: คลิกบนแผนที่เพื่อหาพิกัดได้เลย");
             map.on('click', function(e) {
                 var lat = Math.round(e.latlng.lat);
                 var lng = Math.round(e.latlng.lng);
-                alert("คัดลอกตัวเลขนี้ไปใช้ได้เลย:\n[" + lat + ", " + lng + "]");
+                alert("พิกัดสำหรับจุดนี้คือ:\n[" + lat + ", " + lng + "]");
             });
         }
     </script>
