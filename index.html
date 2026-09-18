@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แผนที่ฐานเรียนรู้</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; background-color: #8bb381; /* สีพื้นหลัง */ }
+        #map { width: 100vw; height: 100vh; } 
+        .popup-btn {
+            display: block; text-align: center; background: #ff6b6b; 
+            color: white; padding: 8px; text-decoration: none; border-radius: 5px; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 1. ตั้งค่าให้เป็นระบบพิกัดสำหรับรูปภาพ (ไม่ใช่แผนที่โลก)
+        var map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: -1, // ซูมออกได้สุด
+            maxZoom: 2   // ซูมเข้าได้สุด
+        });
+
+        // 2. กำหนดขนาดของรูปภาพ (กว้างxสูง เป็นพิกัดสมมติ)
+        var bounds = [[0, 0], [1080, 1920]]; 
+
+        // 3. ดึงไฟล์รูปภาพมาแสดงเป็นแผนที่
+        var image = L.imageOverlay('map-image.jpg', bounds).addTo(map);
+        map.fitBounds(bounds);
+
+        // ==========================================
+        // ส่วนปักหมุดฐานเรียนรู้
+        // ==========================================
+
+        // หมุดที่ 1: อาคารตรงกลาง
+        var marker1 = L.marker([650, 960]).addTo(map);
+        marker1.bindPopup("<b>ฐานเรียนรู้ที่ 1: อาคารอำนวยการ</b><br><a href='https://www.youtube.com' target='_blank' class='popup-btn'>คลิกเพื่อเข้าสู่บทเรียน</a>");
+
+        // หมุดที่ 2: สระน้ำด้านบน
+        var marker2 = L.marker([880, 1100]).addTo(map);
+        marker2.bindPopup("<b>ฐานเรียนรู้ที่ 2: ระบบนิเวศน้ำ</b><br><a href='https://www.google.com' target='_blank' class='popup-btn'>คลิกเพื่อเข้าสู่บทเรียน</a>");
+
+        // ==========================================
+        // ตัวช่วยสำหรับคุณ (นักพัฒนา): คลิกลงบนแผนที่เพื่อดูพิกัด
+        // ==========================================
+        map.on('click', function(e) {
+            alert("นำตัวเลขนี้ไปใส่ในโค้ดหมุดใหม่ได้เลย:\nพิกัดคือ: [" + Math.round(e.latlng.lat) + ", " + Math.round(e.latlng.lng) + "]");
+        });
+    </script>
+</body>
+</html>
